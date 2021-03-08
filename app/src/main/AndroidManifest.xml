@@ -4,7 +4,8 @@
 
     <application
         android:label="@string/ime_name"
-        android:allowBackup="false">
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher">
         <activity android:name="com.jasperandrew.customkeyboard.ImePreferences" android:label="@string/settings_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
