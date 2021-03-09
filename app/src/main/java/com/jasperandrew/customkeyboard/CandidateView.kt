@@ -78,7 +78,7 @@ class CandidateView(context: Context) : View(context) {
      * If the canvas is null, then only touch calculations are performed to pick the target
      * candidate.
      */
-    override fun onDraw(canvas: Canvas) {
+    override fun onDraw(canvas: Canvas?) {
         if (canvas != null) {
             super.onDraw(canvas)
         }
@@ -166,7 +166,7 @@ class CandidateView(context: Context) : View(context) {
         scrollTo(0, 0)
         mTargetScrollX = 0
         // Compute the total width
-        draw(null)
+        onDraw(null)
         invalidate()
         requestLayout()
     }
@@ -223,7 +223,7 @@ class CandidateView(context: Context) : View(context) {
     fun takeSuggestionAt(x: Float) {
         mTouchX = x.toInt()
         // To detect candidate
-        draw(null)
+        onDraw(null)
         if (mSelectedIndex >= 0) {
             mService!!.pickSuggestionManually(mSelectedIndex)
         }
