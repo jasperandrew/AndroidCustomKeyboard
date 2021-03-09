@@ -15,6 +15,7 @@
  */
 package com.jasperandrew.customkeyboard
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -46,6 +47,7 @@ class CandidateView(context: Context) : View(context) {
     private var mTargetScrollX = 0
     private var mTotalWidth = 0
     private val mGestureDetector: GestureDetector
+    private val zeroRect = Rect()
 
     /**
      * A connection back to the service to communicate with the text field
@@ -64,7 +66,7 @@ class CandidateView(context: Context) : View(context) {
 
         // Get the desired height of the icon menu view (last row of items does
         // not have a divider below)
-        val padding = Rect()
+        val padding = zeroRect
         mSelectionHighlight?.getPadding(padding)
         val desiredHeight = (mPaint.textSize.toInt() + mVerticalPadding
                 + padding.top + padding.bottom)
@@ -74,14 +76,16 @@ class CandidateView(context: Context) : View(context) {
                 resolveSize(desiredHeight, heightMeasureSpec))
     }
 
+    override fun onDraw(canvas: Canvas?) {
+        if (canvas != null) super.onDraw(canvas)
+        drawSuggestion(canvas)
+    }
+
     /**
      * If the canvas is null, then only touch calculations are performed to pick the target
      * candidate.
      */
-    override fun onDraw(canvas: Canvas?) {
-        if (canvas != null) {
-            super.onDraw(canvas)
-        }
+    private fun drawSuggestion(canvas: Canvas?) {
         mTotalWidth = 0
         if (mSuggestions == null) return
         if (mBgPadding == null) {
@@ -156,8 +160,7 @@ class CandidateView(context: Context) : View(context) {
         invalidate()
     }
 
-    fun setSuggestions(suggestions: List<String>?, completions: Boolean,
-                       typedWordValid: Boolean) {
+    fun setSuggestions(suggestions: List<String>?, completions: Boolean, typedWordValid: Boolean) {
         clear()
         if (suggestions != null) {
             mSuggestions = ArrayList(suggestions)
@@ -166,7 +169,7 @@ class CandidateView(context: Context) : View(context) {
         scrollTo(0, 0)
         mTargetScrollX = 0
         // Compute the total width
-        onDraw(null)
+        drawSuggestion(null)
         invalidate()
         requestLayout()
     }
@@ -178,6 +181,8 @@ class CandidateView(context: Context) : View(context) {
         invalidate()
     }
 
+    // Suppressed because blind folks probably don't have much need for a soft keyboard
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(me: MotionEvent): Boolean {
         if (mGestureDetector.onTouchEvent(me)) {
             return true
@@ -223,7 +228,7 @@ class CandidateView(context: Context) : View(context) {
     fun takeSuggestionAt(x: Float) {
         mTouchX = x.toInt()
         // To detect candidate
-        onDraw(null)
+        drawSuggestion(null)
         if (mSelectedIndex >= 0) {
             mService!!.pickSuggestionManually(mSelectedIndex)
         }
@@ -245,8 +250,6 @@ class CandidateView(context: Context) : View(context) {
 
     /**
      * Construct a CandidateView for showing suggested words for completion.
-     * @param context
-     * @param attrs
      */
     init {
         mSelectionHighlight?.state = intArrayOf(
@@ -256,17 +259,17 @@ class CandidateView(context: Context) : View(context) {
                 android.R.attr.state_pressed
         )
         val r = context.resources
-        setBackgroundColor(r.getColor(R.color.candidate_background))
-        mColorNormal = r.getColor(R.color.candidate_normal)
-        mColorRecommended = r.getColor(R.color.candidate_recommended)
-        mColorOther = r.getColor(R.color.candidate_other)
+        setBackgroundColor(r.getColor(R.color.candidate_background, null))
+        mColorNormal = r.getColor(R.color.candidate_normal, null)
+        mColorRecommended = r.getColor(R.color.candidate_recommended, null)
+        mColorOther = r.getColor(R.color.candidate_other, null)
         mVerticalPadding = r.getDimensionPixelSize(R.dimen.candidate_vertical_padding)
         mPaint = Paint()
         mPaint.color = mColorNormal
         mPaint.isAntiAlias = true
         mPaint.textSize = r.getDimensionPixelSize(R.dimen.candidate_font_height).toFloat()
         mPaint.strokeWidth = 0f
-        mGestureDetector = GestureDetector(object : SimpleOnGestureListener() {
+        mGestureDetector = GestureDetector(context, object : SimpleOnGestureListener() {
             override fun onScroll(e1: MotionEvent, e2: MotionEvent,
                                   distanceX: Float, distanceY: Float): Boolean {
                 mScrolled = true
