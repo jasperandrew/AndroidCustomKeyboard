@@ -24,9 +24,12 @@ import android.inputmethodservice.KeyboardView
 import android.util.AttributeSet
 import android.view.inputmethod.InputMethodSubtype
 
+@Suppress("deprecation")
 class LatinKeyboardView : KeyboardView {
-    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {}
-    constructor(context: Context?, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle) {}
+    private val paint = Paint()
+
+    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context?, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
 
     override fun onLongPress(key: Keyboard.Key): Boolean {
         return if (key.codes[0] == Keyboard.KEYCODE_CANCEL) {
@@ -49,24 +52,18 @@ class LatinKeyboardView : KeyboardView {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val paint = Paint()
+        val paint = paint
         paint.textAlign = Paint.Align.CENTER
         paint.textSize = 28f
         paint.color = Color.LTGRAY
         val keys = keyboard.keys
         for (key in keys) {
-            if (key.label != null) {
-                if (key.label == "q") {
-                    canvas.drawText("1", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
-                } else if (key.label == "w") {
-                    canvas.drawText("2", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
-                } else if (key.label == "e") {
-                    canvas.drawText("3", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
-                } else if (key.label == "r") {
-                    canvas.drawText("4", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
-                } else if (key.label == "t") {
-                    canvas.drawText("5", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
-                }
+            when (key.label) {
+                "q" -> canvas.drawText("1", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
+                "w" -> canvas.drawText("2", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
+                "e" -> canvas.drawText("3", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
+                "r" -> canvas.drawText("4", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
+                "t" -> canvas.drawText("5", (key.x + (key.width - 25)).toFloat(), (key.y + 40).toFloat(), paint)
             }
         }
     }
@@ -74,7 +71,7 @@ class LatinKeyboardView : KeyboardView {
     companion object {
         const val KEYCODE_OPTIONS = -100
 
-        // TODO: Move this into android.inputmethodservice.Keyboard
+        // TODO: Move this into com.jasperandrew.customkeyboard.Keyboard
         const val KEYCODE_LANGUAGE_SWITCH = -101
     }
 }

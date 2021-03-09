@@ -21,7 +21,9 @@ import android.content.res.XmlResourceParser
 import android.graphics.drawable.Drawable
 import android.inputmethodservice.Keyboard
 import android.view.inputmethod.EditorInfo
+import androidx.core.content.res.ResourcesCompat
 
+@Suppress("deprecation") //TODO: Re-implement Keyboard?!
 class LatinKeyboard : Keyboard {
     private var mEnterKey: Key? = null
     private var mSpaceKey: Key? = null
@@ -53,24 +55,23 @@ class LatinKeyboard : Keyboard {
      */
     private var mSavedLanguageSwitchKey: Key? = null
 
-    constructor(context: Context?, xmlLayoutResId: Int) : super(context, xmlLayoutResId) {}
-    constructor(context: Context?, layoutTemplateResId: Int,
-                characters: CharSequence?, columns: Int, horizontalPadding: Int) : super(context, layoutTemplateResId, characters, columns, horizontalPadding) {
-    }
+    constructor(context: Context?, xmlLayoutResId: Int) : super(context, xmlLayoutResId)
+    constructor(context: Context?, layoutTemplateResId: Int, characters: CharSequence?, columns: Int, horizontalPadding: Int) : super(context, layoutTemplateResId, characters, columns, horizontalPadding)
 
     override fun createKeyFromXml(res: Resources, parent: Row, x: Int, y: Int,
                                   parser: XmlResourceParser): Key {
         val key: Key = LatinKey(res, parent, x, y, parser)
-        if (key.codes[0] == 10) {
-            mEnterKey = key
-        } else if (key.codes[0] == ' '.toInt()) {
-            mSpaceKey = key
-        } else if (key.codes[0] == KEYCODE_MODE_CHANGE) {
-            mModeChangeKey = key
-            mSavedModeChangeKey = LatinKey(res, parent, x, y, parser)
-        } else if (key.codes[0] == LatinKeyboardView.KEYCODE_LANGUAGE_SWITCH) {
-            mLanguageSwitchKey = key
-            mSavedLanguageSwitchKey = LatinKey(res, parent, x, y, parser)
+        when (key.codes[0]) {
+            10 -> mEnterKey = key
+            ' '.toInt() -> mSpaceKey = key
+            KEYCODE_MODE_CHANGE -> {
+                mModeChangeKey = key
+                mSavedModeChangeKey = LatinKey(res, parent, x, y, parser)
+            }
+            LatinKeyboardView.KEYCODE_LANGUAGE_SWITCH -> {
+                mLanguageSwitchKey = key
+                mSavedLanguageSwitchKey = LatinKey(res, parent, x, y, parser)
+            }
         }
         return key
     }
@@ -118,7 +119,7 @@ class LatinKeyboard : Keyboard {
                 mEnterKey!!.label = res.getText(R.string.label_next_key)
             }
             EditorInfo.IME_ACTION_SEARCH -> {
-                mEnterKey!!.icon = res.getDrawable(R.drawable.sym_keyboard_search)
+                mEnterKey!!.icon = ResourcesCompat.getDrawable(res, R.drawable.sym_keyboard_search, null)
                 mEnterKey!!.label = null
             }
             EditorInfo.IME_ACTION_SEND -> {
@@ -127,7 +128,7 @@ class LatinKeyboard : Keyboard {
                 mEnterKey!!.label = res.getText(R.string.label_send_key)
             }
             else -> {
-                mEnterKey!!.icon = res.getDrawable(R.drawable.sym_keyboard_return)
+                mEnterKey!!.icon = ResourcesCompat.getDrawable(res, R.drawable.sym_keyboard_return, null)
                 mEnterKey!!.label = null
             }
         }
