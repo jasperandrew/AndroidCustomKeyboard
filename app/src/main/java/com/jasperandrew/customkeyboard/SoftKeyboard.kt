@@ -37,11 +37,12 @@ import java.util.*
  * a basic example for how you would get started writing an input method, to
  * be fleshed out as appropriate.
  */
+@Suppress("deprecation")
 class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellCheckerSessionListener {
     private var mInputMethodManager: InputMethodManager? = null
     private var mInputView: LatinKeyboardView? = null
     private var mCandidateView: CandidateView? = null
-    private var mCompletions: Array<CompletionInfo>? = null
+    private var mCompletions: Array<CompletionInfo?>? = null
     private val mComposing = StringBuilder()
     private var mPredictionOn = false
     private var mCompletionOn = false
@@ -94,6 +95,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
      * is displayed, and every time it needs to be re-created such as due to
      * a configuration change.
      */
+    @Suppress("InflateParams")
     override fun onCreateInputView(): View {
         mInputView = layoutInflater.inflate(
                 R.layout.input, null) as LatinKeyboardView
@@ -242,7 +244,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
 
         // If the current selection in the text view changes, we should
         // clear whatever candidate text we have.
-        if (mComposing.length > 0 && (newSelStart != candidatesEnd
+        if (mComposing.isNotEmpty() && (newSelStart != candidatesEnd
                         || newSelEnd != candidatesEnd)) {
             mComposing.setLength(0)
             updateCandidates()
@@ -257,11 +259,11 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
      * to show the completions ourself, since the editor can not be seen
      * in that situation.
      */
-    override fun onDisplayCompletions(completions: Array<CompletionInfo>) {
+    override fun onDisplayCompletions(completions: Array<CompletionInfo?>?) {
         if (mCompletionOn) {
             mCompletions = completions
             if (completions == null) {
-                setSuggestions(null, false, false)
+                setSuggestions(null, false, typedWordValid = false)
                 return
             }
             val stringList: MutableList<String> = ArrayList()
@@ -269,7 +271,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
                 val ci = completions[i]
                 if (ci != null) stringList.add(ci.text.toString())
             }
-            setSuggestions(stringList, true, true)
+            setSuggestions(stringList, true, typedWordValid = true)
         }
     }
 
@@ -287,12 +289,10 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
         if (c == 0 || ic == null) {
             return false
         }
-        var dead = false
         if (c and KeyCharacterMap.COMBINING_ACCENT != 0) {
-            dead = true
             c = c and KeyCharacterMap.COMBINING_ACCENT_MASK
         }
-        if (mComposing.length > 0) {
+        if (mComposing.isNotEmpty()) {
             val accent = mComposing[mComposing.length - 1]
             val composed = KeyEvent.getDeadChar(accent.toInt(), c)
             if (composed != 0) {
@@ -324,7 +324,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
                 // Special handling of the delete key: if we currently are
                 // composing text for the user, we want to modify that instead
                 // of let the application to the delete itself.
-                if (mComposing.length > 0) {
+                if (mComposing.isNotEmpty()) {
                     onKey(Keyboard.KEYCODE_DELETE, null)
                     return true
                 }
@@ -358,7 +358,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
      * Helper function to commit any text being composed in to the editor.
      */
     private fun commitTyped(inputConnection: InputConnection) {
-        if (mComposing.length > 0) {
+        if (mComposing.isNotEmpty()) {
             inputConnection.commitText(mComposing, mComposing.length)
             mComposing.setLength(0)
             updateCandidates()
@@ -384,11 +384,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
      * Helper to determine if a given character code is alphabetic.
      */
     private fun isAlphabet(code: Int): Boolean {
-        return if (Character.isLetter(code)) {
-            true
-        } else {
-            false
-        }
+        return Character.isLetter(code)
     }
 
     /**
@@ -420,7 +416,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
         Log.d("Test", "KEYCODE: $primaryCode")
         if (isWordSeparator(primaryCode)) {
             // Handle separator
-            if (mComposing.length > 0) {
+            if (mComposing.isNotEmpty()) {
                 commitTyped(currentInputConnection)
             }
             sendKey(primaryCode)
@@ -456,7 +452,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
     override fun onText(text: CharSequence) {
         val ic = currentInputConnection ?: return
         ic.beginBatchEdit()
-        if (mComposing.length > 0) {
+        if (mComposing.isNotEmpty()) {
             commitTyped(ic)
         }
         ic.commitText(text, 0)
@@ -471,21 +467,21 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
      */
     private fun updateCandidates() {
         if (!mCompletionOn) {
-            if (mComposing.length > 0) {
+            if (mComposing.isNotEmpty()) {
                 val list = ArrayList<String>()
                 //list.add(mComposing.toString());
                 Log.d("SoftKeyboard", "REQUESTING: $mComposing")
                 mScs!!.getSentenceSuggestions(arrayOf(TextInfo(mComposing.toString())), 5)
-                setSuggestions(list, true, true)
+                setSuggestions(list, true, typedWordValid = true)
             } else {
-                setSuggestions(null, false, false)
+                setSuggestions(null, false, typedWordValid = false)
             }
         }
     }
 
-    fun setSuggestions(suggestions: List<String>?, completions: Boolean,
-                       typedWordValid: Boolean) {
-        if (suggestions != null && suggestions.size > 0) {
+    private fun setSuggestions(suggestions: List<String>?, completions: Boolean,
+                               typedWordValid: Boolean) {
+        if (suggestions != null && suggestions.isNotEmpty()) {
             setCandidatesViewShown(true)
         } else if (isExtractViewShown) {
             setCandidatesViewShown(true)
@@ -498,16 +494,20 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
 
     private fun handleBackspace() {
         val length = mComposing.length
-        if (length > 1) {
-            mComposing.delete(length - 1, length)
-            currentInputConnection.setComposingText(mComposing, 1)
-            updateCandidates()
-        } else if (length > 0) {
-            mComposing.setLength(0)
-            currentInputConnection.commitText("", 0)
-            updateCandidates()
-        } else {
-            keyDownUp(KeyEvent.KEYCODE_DEL)
+        when {
+            length > 1 -> {
+                mComposing.delete(length - 1, length)
+                currentInputConnection.setComposingText(mComposing, 1)
+                updateCandidates()
+            }
+            length > 0 -> {
+                mComposing.setLength(0)
+                currentInputConnection.commitText("", 0)
+                updateCandidates()
+            }
+            else -> {
+                keyDownUp(KeyEvent.KEYCODE_DEL)
+            }
         }
         updateShiftKeyState(currentInputEditorInfo)
     }
@@ -517,35 +517,39 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
             return
         }
         val currentKeyboard = mInputView!!.keyboard
-        if (mQwertyKeyboard == currentKeyboard) {
-            // Alphabet keyboard
-            checkToggleCapsLock()
-            mInputView!!.isShifted = mCapsLock || !mInputView!!.isShifted
-        } else if (currentKeyboard === mSymbolsKeyboard) {
-            mSymbolsKeyboard!!.isShifted = true
-            setLatinKeyboard(mSymbolsShiftedKeyboard)
-            mSymbolsShiftedKeyboard!!.isShifted = true
-        } else if (currentKeyboard === mSymbolsShiftedKeyboard) {
-            mSymbolsShiftedKeyboard!!.isShifted = false
-            setLatinKeyboard(mSymbolsKeyboard)
-            mSymbolsKeyboard!!.isShifted = false
+        when {
+            mQwertyKeyboard == currentKeyboard -> {
+                // Alphabet keyboard
+                checkToggleCapsLock()
+                mInputView!!.isShifted = mCapsLock || !mInputView!!.isShifted
+            }
+            currentKeyboard === mSymbolsKeyboard -> {
+                mSymbolsKeyboard!!.isShifted = true
+                setLatinKeyboard(mSymbolsShiftedKeyboard)
+                mSymbolsShiftedKeyboard!!.isShifted = true
+            }
+            currentKeyboard === mSymbolsShiftedKeyboard -> {
+                mSymbolsShiftedKeyboard!!.isShifted = false
+                setLatinKeyboard(mSymbolsKeyboard)
+                mSymbolsKeyboard!!.isShifted = false
+            }
         }
     }
 
     private fun handleCharacter(primaryCode: Int, keyCodes: IntArray) {
-        var primaryCode = primaryCode
+        var code = primaryCode
         if (isInputViewShown) {
             if (mInputView!!.isShifted) {
-                primaryCode = Character.toUpperCase(primaryCode)
+                code = Character.toUpperCase(code)
             }
         }
         if (mPredictionOn) {
-            mComposing.append(primaryCode.toChar())
+            mComposing.append(code.toChar())
             currentInputConnection.setComposingText(mComposing, 1)
             updateShiftKeyState(currentInputEditorInfo)
             updateCandidates()
         } else {
-            currentInputConnection.commitText(primaryCode.toChar().toString(), 1)
+            currentInputConnection.commitText(code.toChar().toString(), 1)
         }
     }
 
@@ -556,7 +560,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
     }
 
     private val token: IBinder?
-        private get() {
+        get() {
             val dialog = window ?: return null
             val window = dialog.window ?: return null
             return window.attributes.token
@@ -576,12 +580,12 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
         }
     }
 
-    fun isWordSeparator(code: Int): Boolean {
+    private fun isWordSeparator(code: Int): Boolean {
         val separators = wordSeparators
         return separators!!.contains(code.toChar().toString())
     }
 
-    fun pickDefaultCandidate() {
+    private fun pickDefaultCandidate() {
         pickSuggestionManually(0)
     }
 
@@ -593,7 +597,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
                 mCandidateView!!.clear()
             }
             updateShiftKeyState(currentInputEditorInfo)
-        } else if (mComposing.length > 0) {
+        } else if (mComposing.isNotEmpty()) {
             if (mPredictionOn && mSuggestions != null && index >= 0) {
                 mComposing.replace(0, mComposing.length, mSuggestions!![index])
             }
@@ -659,7 +663,7 @@ class SoftKeyboard : InputMethodService(), OnKeyboardActionListener, SpellChecke
             }
         }
         Log.d("SoftKeyboard", "SUGGESTIONS: $sb")
-        setSuggestions(sb, true, true)
+        setSuggestions(sb, true, typedWordValid = true)
     }
 
     companion object {
