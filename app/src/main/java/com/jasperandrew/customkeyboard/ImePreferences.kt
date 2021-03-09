@@ -31,8 +31,8 @@ class ImePreferences : FragmentActivity() {
     class Settings : InputMethodSettingsFragment() {
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
-            setInputMethodSettingsCategoryTitle(R.string.language_selection_title);
-            setSubtypeEnablerTitle(R.string.select_language);
+            setInputMethodSettingsCategoryTitle(R.string.language_selection_title)
+            setSubtypeEnablerTitle(R.string.select_language)
         }
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
