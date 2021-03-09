@@ -20,11 +20,9 @@
 package com.android.inputmethodcommon
 
 import android.content.Context
-import androidx.preference.PreferenceFragmentCompat
-import com.android.inputmethodcommon.InputMethodSettingsInterface
-import com.android.inputmethodcommon.InputMethodSettingsImpl
-import android.os.Bundle
 import android.graphics.drawable.Drawable
+import android.os.Bundle
+import androidx.preference.PreferenceFragmentCompat
 
 /**
  * This is a helper class for an IME's settings preference fragment. It's recommended for every

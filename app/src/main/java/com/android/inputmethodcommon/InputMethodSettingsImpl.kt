@@ -169,10 +169,10 @@ internal class InputMethodSettingsImpl : InputMethodSettingsInterface {
             if (context == null || imm == null || imi == null) return null
             val subtypes = imm.getEnabledInputMethodSubtypeList(imi, true)
             val sb = StringBuilder()
-            val N = subtypes.size
-            for (i in 0 until N) {
+            val n = subtypes.size
+            for (i in 0 until n) {
                 val subtype = subtypes[i]
-                if (sb.length > 0) {
+                if (sb.isNotEmpty()) {
                     sb.append(", ")
                 }
                 sb.append(subtype.getDisplayName(context, imi.packageName,
